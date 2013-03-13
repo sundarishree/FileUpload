@@ -1,0 +1,89 @@
+Title :  uninitialized constant V8::JSError problem while installing Ruby Racer gem 
+
+
+I need to install the twitter-bootstrap-rails , ruby racer and less gem in centos-Linux platform to work with our project .
+
+ :( It took four days for me to overcome a problem i faced .The problem is "uninitialized constant V8::JSError  "
+
+My gem file looks like this
+.
+.
+.
+
+group :assets do
+  gem 'sass-rails',   '~> 3.2.3'
+  gem 'coffee-rails', '~> 3.2.1'
+  gem 'therubyracer', :platforms => :ruby
+  gem 'uglifier', '>= 1.0.3'
+gem "less-rails" #Sprockets (what Rails 3.1 uses for its asset pipeline) supports LESS
+  gem 'twitter-bootstrap-rails'
+end
+.
+.
+.
+
+Tried to bundle install the gems
+[root@localhost kisdportal]#bundle install
+
+:) Got successfully installed.Thought i can start my work now.Then came the problem while precompiling.
+
+[root@localhost kisdportal]# RAILS_ENV=development rake assets:precompile 
+rake aborted! 
+uninitialized constant V8::JSError 
+/usr/local/rvm/gems/ruby-1.9.3-p194/gems/less-2.2.2/lib/less/java_script/v8_context.rb:61:in `rescue in lock' 
+/usr/local/rvm/gems/ruby-1.9.3-p194/gems/less-2.2.2/lib/less/java_script/v8_context.rb:60:in `lock' 
+/usr/local/rvm/gems/ruby-1.9.3-p194/gems/less-2.2.2/lib/less/java_script/v8_context.rb:19:in `initialize' 
+
+
+
+
+
+Then no other way have to fix the issue to get start with the project. Googled...
+got a useful link 
+https://github.com/seyhunak/twitter-bootstrap-rails/issues/206
+
+Many folks have faced same issue. Tried the solutions given but result was not success. Got same error  :(.
+ 
+Screwed up into issue.Got support from my team mate to get out of this issue.
+He used the same search link which i used but comedy is. In that one folk have mentioned like 
+
+Why are you doing the -- :require => 'v8' -- ?
+
+What happens if you add just this to your Gemfile? -- gem "therubyracer"
+
+Rite idea is to add the :require => 'v8'   with line   gem 'therubyracer', :platforms => :ruby
+
+Update in my gem file as
+
+.
+.
+.
+
+group :assets do
+  gem 'sass-rails',   '~> 3.2.3'
+  gem 'coffee-rails', '~> 3.2.1'
+  gem 'therubyracer', :platforms => :ruby, :require => 'v8'
+  gem 'uglifier', '>= 1.0.3'
+gem "less-rails" #Sprockets (what Rails 3.1 uses for its asset pipeline) supports LESS
+  gem 'twitter-bootstrap-rails'
+end
+.
+.
+.
+
+then pre-compiled .
+
+[root@localhost kisdportal]# RAILS_ENV=development rake assets:precompile 
+rake aborted! 
+/usr/local/rvm/gems/ruby-1.9.3-p194/gems/therubyracer-0.11.4/lib/v8/init.so: cannot restore segment prot after reloc: Permission denied - 
+
+oops got permission denied .
+
+Then tried with the command "chcon -t texrel_shlib_t init.so"  to give permission for accessing the corresponding file 
+
+gems/ruby-1.9.3-p194/gems/therubyracer-0.11.4/lib/v8]#chcon -t texrel_shlib_t init.so
+
+[root@localhost kisdportal]# RAILS_ENV=development rake assets:precompile 
+/usr/local/rvm/rubies/ruby-1.9.3-p194/bin/ruby /usr/local/rvm/gems/ruby-1.9.3-p194/bin/rake assets:precompile:all RAILS_ENV=development RAILS_GROUPS=assets 
+
+:)- Got it finaly installed properly.
